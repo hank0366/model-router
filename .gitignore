@@ -1,0 +1,8 @@
+*.o
+model_router
+config.json
+config.json.bak
+__pycache__/
+*.pyc
+*.log
+stats/
