@@ -85,6 +85,265 @@ static void handle_models(client_t *c) {
   send_response(c, body, blen);
 }
 
+
+/* =========================== */
+/* 配置管理 API                 */
+/* =========================== */
+
+extern int config_save(const router_config_t *cfg, const char *path);
+extern const char *task_names[];
+
+/* JSON 转义辅助 */
+static void escape_json_str(const char *in, char *out, size_t out_sz) {
+    size_t j = 0;
+    for (size_t i = 0; in[i] && j < out_sz - 6; i++) {
+        unsigned char c = (unsigned char)in[i];
+        if (c == '"' || c == '\\') {
+            if (j + 2 >= out_sz) break;
+            out[j++] = '\\';
+            out[j++] = c;
+        } else if (c == '\n') {
+            if (j + 2 >= out_sz) break;
+            out[j++] = '\\'; out[j++] = 'n';
+        } else if (c == '\r') {
+            if (j + 2 >= out_sz) break;
+            out[j++] = '\\'; out[j++] = 'r';
+        } else if (c == '\t') {
+            if (j + 2 >= out_sz) break;
+            out[j++] = '\\'; out[j++] = 't';
+        } else if (c < 0x20) {
+            if (j + 6 >= out_sz) break;
+            int written = snprintf(out + j, out_sz - j, "\\u%04x", c);
+            if (written < 0) break;
+            j += (size_t)written;
+        } else {
+            if (j + 1 >= out_sz) break;
+            out[j++] = c;
+        }
+    }
+    out[j] = '\0';
+}
+
+/* 序列化 model_config_t 到输出缓冲区 */
+static void write_model_json(model_config_t *mc, char *buf, size_t sz) {
+    char p[256], m[256], b[512];
+    escape_json_str(mc->provider, p, sizeof(p));
+    escape_json_str(mc->model, m, sizeof(m));
+    escape_json_str(mc->base_url, b, sizeof(b));
+    snprintf(buf, sz,
+        "{\"provider\":\"%s\",\"model\":\"%s\",\"base_url\":\"%s\",\"api_key\":\"***\"}",
+        p, m, b);
+}
+
+/* 序列化完整配置 */
+static char *serialize_config(const router_config_t *cfg, size_t *out_len) {
+    char buf[8192];
+    char mb[1024];
+    size_t pos = 0;
+    int n;
+    
+    n = snprintf(buf + pos, sizeof(buf) - pos, "{\"router_model\":");
+    pos += (n > 0 ? (size_t)n : 0);
+    
+    write_model_json((model_config_t*)&cfg->router_model, mb, sizeof(mb));
+    n = snprintf(buf + pos, sizeof(buf) - pos, "%s,", mb);
+    pos += (n > 0 ? (size_t)n : 0);
+    
+    n = snprintf(buf + pos, sizeof(buf) - pos, "\"routing_rules\":{");
+    pos += (n > 0 ? (size_t)n : 0);
+    
+    for (int t = 0; t < TASK_UNKNOWN; t++) {
+        if (t > 0) {
+            n = snprintf(buf + pos, sizeof(buf) - pos, ",");
+            pos += (n > 0 ? (size_t)n : 0);
+        }
+        n = snprintf(buf + pos, sizeof(buf) - pos, "\"%s\":", task_names[t]);
+        pos += (n > 0 ? (size_t)n : 0);
+        write_model_json((model_config_t*)&cfg->rules[t], mb, sizeof(mb));
+        n = snprintf(buf + pos, sizeof(buf) - pos, "%s", mb);
+        pos += (n > 0 ? (size_t)n : 0);
+    }
+    
+    n = snprintf(buf + pos, sizeof(buf) - pos, "}}");
+    pos += (n > 0 ? (size_t)n : 0);
+    
+    char *result = malloc(pos + 1);
+    if (result) {
+        memcpy(result, buf, pos);
+        result[pos] = '\0';
+    }
+    *out_len = pos;
+    return result;
+}
+
+/* GET /api/config */
+static void handle_get_config(client_t *c, const router_config_t *cfg) {
+    size_t json_len;
+    char *json = serialize_config(cfg, &json_len);
+    if (!json) {
+        const char *err = "{\"error\":\"serialization failed\"}";
+        const char *hdr = http_headers(500, "Internal Server Error", "application/json", strlen(err), 0);
+        send_response(c, hdr, strlen(hdr));
+        send_response(c, err, strlen(err));
+        return;
+    }
+    const char *hdr = http_headers(200, "OK", "application/json", json_len, 0);
+    send_response(c, hdr, strlen(hdr));
+    send_response(c, json, json_len);
+    free(json);
+}
+
+/* 从 JSON 中提取字符串值 */
+static int extract_json_str(const char *json, const char *key, char *out, size_t out_sz) {
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    const char *kp = strstr(json, search);
+    if (!kp) return -1;
+    const char *colon = strchr(kp, ':');
+    if (!colon) return -1;
+    colon++;
+    while (*colon == ' ') colon++;
+    if (*colon != '"') return -1;
+    colon++;
+    const char *end = strchr(colon, '"');
+    if (!end) return -1;
+    size_t len = (size_t)(end - colon);
+    if (len >= out_sz) len = out_sz - 1;
+    memcpy(out, colon, len);
+    out[len] = '\0';
+    return 0;
+}
+
+/* POST /api/config */
+static void handle_post_config(client_t *c, const char *body, size_t blen, router_config_t *cfg) {
+    (void)blen;
+    const char *rm = strstr(body, "\"router_model\"");
+    if (rm) {
+        const char *rm_val = strchr(rm, ':');
+        if (rm_val) {
+            rm_val++;
+            while (*rm_val == ' ') rm_val++;
+            extract_json_str(rm_val, "provider", cfg->router_model.provider, sizeof(cfg->router_model.provider));
+            extract_json_str(rm_val, "model", cfg->router_model.model, sizeof(cfg->router_model.model));
+            extract_json_str(rm_val, "base_url", cfg->router_model.base_url, sizeof(cfg->router_model.base_url));
+        }
+    }
+    const char *rr = strstr(body, "\"routing_rules\"");
+    if (rr) {
+        const char *rr_val = strchr(rr, ':');
+        if (rr_val) {
+            rr_val++;
+            while (*rr_val == ' ') rr_val++;
+            for (int t = 0; t < TASK_UNKNOWN; t++) {
+                char sk[32];
+                snprintf(sk, sizeof(sk), "\"%s\"", task_names[t]);
+                const char *tk = strstr(rr_val, sk);
+                if (!tk) continue;
+                const char *tv = strchr(tk, ':');
+                if (!tv) continue;
+                tv++;
+                while (*tv == ' ') tv++;
+                extract_json_str(tv, "provider", cfg->rules[t].provider, sizeof(cfg->rules[t].provider));
+                extract_json_str(tv, "model", cfg->rules[t].model, sizeof(cfg->rules[t].model));
+                extract_json_str(tv, "base_url", cfg->rules[t].base_url, sizeof(cfg->rules[t].base_url));
+            }
+        }
+    }
+    config_save(cfg, CONFIG_FILE);
+    fprintf(stderr, "[server] 配置已更新\n");
+    const char *ok = "{\"status\":\"ok\"}";
+    const char *hdr = http_headers(200, "OK", "application/json", strlen(ok), 0);
+    send_response(c, hdr, strlen(hdr));
+    send_response(c, ok, strlen(ok));
+}
+
+/* 管理页面 HTML */
+static const char ADMIN_HTML[] =
+"<html><head><meta charset=\"utf-8\"><title>Model Router C</title>"
+"<style>"
+"*{box-sizing:border-box;margin:0;padding:0}"
+"body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:24px;max-width:1100px;margin:0 auto}"
+"h1{font-size:22px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:12px}"
+"h2{font-size:16px;margin:16px 0 8px;color:#58a6ff}"
+".card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;margin-bottom:12px}"
+".card h3{font-size:14px;margin-bottom:10px;color:#c9d1d9;display:flex;align-items:center;gap:8px}"
+".grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}"
+"@media(max-width:720px){.grid{grid-template-columns:1fr}}"
+".field{margin-bottom:8px}"
+".field label{display:block;font-size:11px;color:#8b949e;margin-bottom:2px;font-weight:500}"
+".field input{width:100%;padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:13px;outline:none}"
+".field input:focus{border-color:#58a6ff}"
+".badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600}"
+".badge-blue{background:rgba(88,166,255,0.15);color:#58a6ff}"
+".badge-green{background:rgba(63,185,80,0.15);color:#3fb950}"
+"button{padding:8px 16px;border:1px solid #30363d;border-radius:6px;background:#21262d;color:#c9d1d9;font-size:13px;cursor:pointer}"
+"button:hover{background:#30363d}"
+"button.primary{background:#238636;border-color:#238636;color:#fff}"
+"button.primary:hover{background:#2ea043}"
+".toast{padding:8px 12px;border-radius:6px;font-size:13px;margin-top:12px;display:none}"
+".toast.ok{display:block;background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3)}"
+".toast.err{display:block;background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3)}"
+".actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}"
+".icon{font-size:18px}"
+"</style></head><body>"
+"<h1>\U0001f500 Model Router C <span class=\"badge badge-blue\">v3.0</span></h1>"
+"<div class=\"card\"><h3><span class=\"icon\">\U0001f50d</span> \u4e3b\u6a21\u578b\uff08\u610f\u56fe\u5206\u7c7b\uff09<span class=\"badge badge-green\">Router</span></h3>"
+"<div class=\"field\"><label>\u63d0\u4f9b\u5546</label><input id=\"rm-provider\" placeholder=\"ollama\"></div>"
+"<div class=\"field\"><label>\u6a21\u578b</label><input id=\"rm-model\" placeholder=\"qwen3:8b-chat\"></div>"
+"<div class=\"field\"><label>API \u5730\u5740</label><input id=\"rm-baseurl\" placeholder=\"http://192.168.100.4:11434/v1\"></div>"
+"</div>"
+"<h2>\U0001f3af \u8def\u7531\u89c4\u5219</h2>"
+"<div class=\"grid\" id=\"rules-grid\"></div>"
+"<div class=\"actions\"><button onclick=\"loadConfig()\">\U0001f504 \u5237\u65b0</button><button class=\"primary\" onclick=\"saveConfig()\">\U0001f4be \u4fdd\u5b58\u914d\u7f6e</button></div>"
+"<div class=\"toast\" id=\"toast\"></div>"
+"<script>"
+"const M={chat:{i:'\U0001f4ac',l:'\u666e\u901a\u5bf9\u8bdd'},code:{i:'\U0001f4bb',l:'\u4ee3\u7801\u751f\u6210'},vision:{i:'\U0001f441\ufe0f',l:'\u56fe\u50cf\u7406\u89e3'},reasoning:{i:'\U0001f9e0',l:'\u590d\u6742\u63a8\u7406'},translation:{i:'\U0001f310',l:'\u7ffb\u8bd1\u4efb\u52a1'},audio:{i:'\U0001f3b5',l:'\u97f3\u9891\u5904\u7406'},video:{i:'\U0001f3ac',l:'\u89c6\u9891\u5206\u6790'}};"
+"let cur=null;"
+"async function loadConfig(){try{"
+"const r=await fetch('/api/config');if(!r.ok)throw Error(r.status);"
+"cur=await r.json();"
+"document.getElementById('rm-provider').value=cur.router_model.provider||'';"
+"document.getElementById('rm-model').value=cur.router_model.model||'';"
+"document.getElementById('rm-baseurl').value=cur.router_model.base_url||'';"
+"const g=document.getElementById('rules-grid');g.innerHTML='';"
+"for(const[t,c]of Object.entries(cur.routing_rules)){const mt=M[t]||{i:'\u2753',l:t};"
+"const d=document.createElement('div');d.className='card';"
+"d.innerHTML='<h3>'+mt.i+' '+mt.l+'</h3>'"
+"var _t=t;var _c=c;"
+"var p=document.createElement('p');"
+"p.innerHTML='<div class=field><label>\\u63d0\\u4f9b\\u5546</label><input class=rp></div>'"
+"+'<div class=field><label>\\u6a21\\u578b</label><input class=rm></div>'"
+"+'<div class=field><label>API \\u5730\\u5740</label><input class=rb></div>';"
+"d.appendChild(p);"
+"d.querySelector('.rp').value=_c.provider||'';"
+"d.querySelector('.rm').value=_c.model||'';"
+"d.querySelector('.rb').value=_c.base_url||'';"
+"g.appendChild(d)}"
+"toast('\u914d\u7f6e\u5df2\u52a0\u8f7d','ok')"
+"}catch(e){toast('\u52a0\u8f7d\u5931\u8d25: '+e.message,'err')}}"
+"function getCfg(){"
+"const o={router_model:{provider:document.getElementById('rm-provider').value,model:document.getElementById('rm-model').value,base_url:document.getElementById('rm-baseurl').value},routing_rules:{}};"
+"document.querySelectorAll('.rp').forEach(e=>{const t=e.dataset.t;if(!o.routing_rules[t])o.routing_rules[t]={};o.routing_rules[t].provider=e.value});"
+"document.querySelectorAll('.rm').forEach(e=>{const t=e.dataset.t;if(!o.routing_rules[t])o.routing_rules[t]={};o.routing_rules[t].model=e.value});"
+"document.querySelectorAll('.rb').forEach(e=>{const t=e.dataset.t;if(!o.routing_rules[t])o.routing_rules[t]={};o.routing_rules[t].base_url=e.value});"
+"for(const k of Object.keys(o.routing_rules))o.routing_rules[k].api_key='***';"
+"return o}"
+"async function saveConfig(){try{"
+"const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(getCfg())});"
+"if(!r.ok)throw Error(r.status);toast('\u914d\u7f6e\u5df2\u4fdd\u5b58','ok')"
+"}catch(e){toast('\u4fdd\u5b58\u5931\u8d25: '+e.message,'err')}}"
+"function toast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+t}"
+"loadConfig()"
+"</script></body></html>";
+
+/* /admin 页面 */
+static void handle_admin(client_t *c) {
+    size_t hlen = strlen(ADMIN_HTML);
+    const char *hdr = http_headers(200, "OK", "text/html; charset=utf-8", hlen, 0);
+    send_response(c, hdr, strlen(hdr));
+    send_response(c, ADMIN_HTML, hlen);
+}
+
 /* Chat Completions */
 static void handle_chat_completions(client_t *c, const char *body, size_t blen) {
   int stream = (strstr(body, "\"stream\": true") != NULL);
@@ -167,14 +426,18 @@ static void handle_request(client_t *c) {
       send_response(c, err, strlen(err));
     }
   } else if (strcmp(path, "/admin") == 0) {
-    const char *html = "<html><body><h1>Model Router C v3.0</h1>"
-      "<p>健康检查: <a href=\"/health\">/health</a></p>"
-      "<p><pre>Config file: config.json</pre></p>"
-      "</body></html>";
-    size_t hlen = strlen(html);
-    const char *hdr = http_headers(200, "OK", "text/html", hlen, 0);
-    send_response(c, hdr, strlen(hdr));
-    send_response(c, html, hlen);
+    handle_admin(c);
+  } else if (strcmp(path, "/api/config") == 0) {
+    if (strcmp(method, "GET") == 0) {
+      handle_get_config(c, &g_config);
+    } else if (strcmp(method, "POST") == 0) {
+      handle_post_config(c, body, body_len, &g_config);
+    } else {
+      const char *err = "{\"error\":\"method not allowed\"}";
+      const char *hdr = http_headers(405, "Method Not Allowed", "application/json", strlen(err), 0);
+      send_response(c, hdr, strlen(hdr));
+      send_response(c, err, strlen(err));
+    }
   } else {
     const char *err = "{\"error\":\"not found\"}";
     const char *hdr = http_headers(404, "Not Found", "application/json", strlen(err), 0);

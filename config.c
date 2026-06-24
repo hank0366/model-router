@@ -166,8 +166,63 @@ int config_load(router_config_t *cfg, const char *path) {
   return 0;
 }
 
+static void write_json_string(FILE *f, const char *s) {
+    fputc('"', f);
+    for (const char *p = s; *p; p++) {
+        unsigned char c = (unsigned char)*p;
+        switch (c) {
+            case '"': fputs("\\\"", f); break;
+            case '\\': fputs("\\\\", f); break;
+            case '\n': fputs("\\n", f); break;
+            case '\r': fputs("\\r", f); break;
+            case '\t': fputs("\\t", f); break;
+            default:
+                if (c < 0x20) fprintf(f, "\\u%04x", c);
+                else fputc(c, f);
+                break;
+        }
+    }
+    fputc('"', f);
+}
+
+static void write_model_config(FILE *f, const model_config_t *mc, int indent) {
+    const char *pad = indent == 4 ? "    " : "      ";
+    fprintf(f, "%s{", pad + 2);  // same indent level for the whole block
+    fprintf(f, "\n%s\"provider\": ", pad);
+    write_json_string(f, mc->provider);
+    fprintf(f, ",\n%s\"model\": ", pad);
+    write_json_string(f, mc->model);
+    fprintf(f, ",\n%s\"base_url\": ", pad);
+    write_json_string(f, mc->base_url);
+    fprintf(f, ",\n%s\"api_key\": \"***\"", pad);
+    fprintf(f, "\n%s}", pad + (indent == 4 ? 2 : 0));
+}
+
 int config_save(const router_config_t *cfg, const char *path) {
-  /* 暂不实现 — 运行时通过 REST API 修改 */
-  (void)cfg; (void)path;
-  return 0;
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        fprintf(stderr, "[config] 无法写入 %s\n", path);
+        return -1;
+    }
+
+    fprintf(f, "{\n");
+
+    // router_model
+    fprintf(f, "  \"router_model\": ");
+    write_model_config(f, &cfg->router_model, 2);
+    fprintf(f, ",\n");
+
+    // routing_rules
+    fprintf(f, "  \"routing_rules\": {\n");
+    for (int t = 0; t < TASK_UNKNOWN; t++) {
+        if (t > 0) fprintf(f, ",\n");
+        fprintf(f, "    \"%s\": ", task_names[t]);
+        write_model_config(f, &cfg->rules[t], 4);
+    }
+    fprintf(f, "\n  }\n");
+    fprintf(f, "}\n");
+
+    fclose(f);
+    fprintf(stderr, "[config] 已保存到 %s\n", path);
+    return 0;
 }
