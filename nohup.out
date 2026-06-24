@@ -1,0 +1,100 @@
+[config] router_model: agnes / agnes-2.0-flash
+[config] rules[0](chat): agnes-2.0-flash
+[config] rules[1](code): agnes-2.0-flash
+[config] rules[2](vision): agnes-2.0-flash
+[config] rules[3](reasoning): agnes-2.0-flash
+[config] rules[4](translation): agnes-2.0-flash
+[config] rules[5](audio): agnes-2.0-flash
+[config] rules[6](video): agnes-2.0-flash
+[config] 已加载 /home/lvzheyu/apps/model-router-c/config.json
+🚀 Model Router C v3.0
+📍 listening on 0.0.0.0:8000
+⚙️  规则引擎: 54 keywords
+💓 API: POST /v1/chat/completions
+[server] 新连接 #0
+[server] tail[87]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /health (0 bytes body)
+[server] buflen=87 header_len=87 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[86]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=86 header_len=86 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[86]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=86 header_len=86 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[918]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=918 header_len=918 body_len=0
+[server] body starts: 
+[server] 新连接 #1
+[server] tail[777]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /api/config (0 bytes body)
+[server] buflen=777 header_len=777 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[7240]: 6d 65 3e 63 61 6e 76 61 73 3c 2f 6e 61 6d 65 3e 5c 6e 20 20 20 20 3c 64 65 73 63 72 69 70 
+[server] POST /v1/chat/completions (6630 bytes body)
+[server] buflen=7240 header_len=610 body_len=6630
+[server] body starts: {"model":"auto","messages":[{"role":"system","content":"You 
+[router] 规则未匹配到，fallback to chat
+[router] 🎯 任务类型: chat
+[router] 📡 路由到: agnes-2.0-flash (agnes)
+[router] 📤 发送到 https://apihub.agnes-ai.com/v1/chat/completions (model: agnes-2.0-flash)
+[router] ✅ 完成 (118 bytes)
+[server] 新连接 #0
+[server] tail[86]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=86 header_len=86 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[91]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /api/config (0 bytes body)
+[server] buflen=91 header_len=91 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[777]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /api/config (0 bytes body)
+[server] buflen=777 header_len=777 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[892]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=892 header_len=892 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] 新连接 #1
+[server] tail[777]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /api/config (0 bytes body)
+[server] buflen=777 header_len=777 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[86]: 74 3a 20 63 75 72 6c 2f 38 2e 35 2e 30 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=86 header_len=86 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[892]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /admin (0 bytes body)
+[server] buflen=892 header_len=892 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] 新连接 #1
+[server] tail[777]: 64 66 36 63 32 64 39 37 31 33 34 61 33 64 34 66 61 32 34 38 38 64 62 63 38 32 0d 0a 0d 0a 
+[server] GET /api/config (0 bytes body)
+[server] buflen=777 header_len=777 body_len=0
+[server] body starts: 
+[server] 新连接 #0
+[server] tail[7240]: 6d 65 3e 63 61 6e 76 61 73 3c 2f 6e 61 6d 65 3e 5c 6e 20 20 20 20 3c 64 65 73 63 72 69 70 
+[server] POST /v1/chat/completions (6630 bytes body)
+[server] buflen=7240 header_len=610 body_len=6630
+[server] body starts: {"model":"auto","messages":[{"role":"system","content":"You 
+[router] 规则未匹配到，fallback to chat
+[router] 🎯 任务类型: chat
+[router] 📡 路由到: agnes-2.0-flash (agnes)
+[router] 📤 发送到 https://apihub.agnes-ai.com/v1/chat/completions (model: agnes-2.0-flash)
+[router] ✅ 完成 (118 bytes)

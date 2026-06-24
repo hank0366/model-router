@@ -1,0 +1,130 @@
+<html><head><meta charset="utf-8"><title>Model Router C</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:24px;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:12px}
+h2{font-size:16px;margin:16px 0 8px;color:#58a6ff}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;margin-bottom:12px}
+.card h3{font-size:14px;margin-bottom:10px;color:#c9d1d9}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.field{margin-bottom:8px}
+.field label{display:block;font-size:11px;color:#8b949e;margin-bottom:2px;font-weight:500}
+.field input{width:100%;padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:13px;outline:none}
+.field input:focus{border-color:#58a6ff}
+.badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600}
+.badge-blue{background:rgba(88,166,255,0.15);color:#58a6ff}
+.badge-green{background:rgba(63,185,80,0.15);color:#3fb950}
+button{padding:8px 16px;border:1px solid #30363d;border-radius:6px;background:#21262d;color:#c9d1d9;font-size:13px;cursor:pointer}
+button:hover{background:#30363d}
+button.primary{background:#238636;border-color:#238636;color:#fff}
+button.primary:hover{background:#2ea043}
+.toast{padding:8px 12px;border-radius:6px;font-size:13px;margin-top:12px;display:none}
+.toast.ok{display:block;background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3)}
+.toast.err{display:block;background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3)}
+.actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+</style></head><body>
+<h1>Model Router C</h1>
+<div class="card">
+<h3>Router Model</h3>
+<div class="field"><label>Provider</label><input id="rm-provider"></div>
+<div class="field"><label>Model</label><input id="rm-model"></div>
+<div class="field"><label>Base URL</label><input id="rm-baseurl"></div>
+</div>
+<h2>Routing Rules</h2>
+<div class="grid" id="rules-grid"></div>
+<div class="actions">
+<button onclick="loadConfig()">Reload</button>
+<button class="primary" onclick="saveConfig()">Save</button>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const TASKS = ["chat","code","vision","reasoning","translation","audio","video"];
+const LABELS = {
+  chat:"Chat",code:"Code",vision:"Vision",
+  reasoning:"Reasoning",translation:"Translation",
+  audio:"Audio",video:"Video"
+};
+
+let cur = null;
+
+async function loadConfig() {
+  try {
+    const r = await fetch("/api/config");
+    if (!r.ok) throw Error(r.status);
+    cur = await r.json();
+    document.getElementById("rm-provider").value = cur.router_model.provider || "";
+    document.getElementById("rm-model").value = cur.router_model.model || "";
+    document.getElementById("rm-baseurl").value = cur.router_model.base_url || "";
+
+    const g = document.getElementById("rules-grid");
+    g.innerHTML = "";
+    for (const t of TASKS) {
+      const c = cur.routing_rules[t] || {};
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = "<h3>" + (LABELS[t] || t) + "</h3>"
+        + "<div class=field><label>Provider</label><input class=rp data-t=" + t + "></div>"
+        + "<div class=field><label>Model</label><input class=rm data-t=" + t + "></div>"
+        + "<div class=field><label>Base URL</label><input class=rb data-t=" + t + "></div>";
+      card.querySelector(".rp").value = c.provider || "";
+      card.querySelector(".rm").value = c.model || "";
+      card.querySelector(".rb").value = c.base_url || "";
+      g.appendChild(card);
+    }
+    toast("Loaded", "ok");
+  } catch(e) {
+    toast("Failed: " + e.message, "err");
+  }
+}
+
+function getCfg() {
+  const o = {
+    router_model: {
+      provider: document.getElementById("rm-provider").value,
+      model: document.getElementById("rm-model").value,
+      base_url: document.getElementById("rm-baseurl").value
+    },
+    routing_rules: {}
+  };
+  document.querySelectorAll(".rp").forEach(function(e) {
+    var t = e.dataset.t;
+    if (!o.routing_rules[t]) o.routing_rules[t] = {};
+    o.routing_rules[t].provider = e.value;
+  });
+  document.querySelectorAll(".rm").forEach(function(e) {
+    var t = e.dataset.t;
+    if (!o.routing_rules[t]) o.routing_rules[t] = {};
+    o.routing_rules[t].model = e.value;
+  });
+  document.querySelectorAll(".rb").forEach(function(e) {
+    var t = e.dataset.t;
+    if (!o.routing_rules[t]) o.routing_rules[t] = {};
+    o.routing_rules[t].base_url = e.value;
+  });
+  for (var k in o.routing_rules) o.routing_rules[k].api_key = "***";
+  return o;
+}
+
+async function saveConfig() {
+  try {
+    var r = await fetch("/api/config", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(getCfg())
+    });
+    if (!r.ok) throw Error(r.status);
+    toast("Saved", "ok");
+  } catch(e) {
+    toast("Failed: " + e.message, "err");
+  }
+}
+
+function toast(m, type) {
+  var e = document.getElementById("toast");
+  e.textContent = m;
+  e.className = "toast " + type;
+}
+
+loadConfig();
+</script></body></html>
