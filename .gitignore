@@ -1,8 +1,9 @@
-*.o
-model_router
 config.json
 config.json.bak
-__pycache__/
-*.pyc
 *.log
+model_router
+nohup.out
+*.o
+*.pyc
+__pycache__/
 stats/
