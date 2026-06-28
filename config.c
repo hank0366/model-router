@@ -46,30 +46,51 @@ static int json_find_key(const char *js, const jsmntok_t *tokens, int ntokens,
 }
 
 /*
- * 解析模型配置 — 直接从展平的 jsmn token 数组中顺序解析 key-value
- * obj_start_idx: obj token 在数组中的索引
- * 由于 jsmn 展平了所有 token，配置文件是扁平的 key-value 结构
+ * 解析模型配置 — 从 jsmn token 中顺序解析 key-value 对
+ * 注意: jsmn 的 object token end=0（不指向子 token），所以不能依赖 end
+ * 改用: 遍历后续 token，遇到下一个 key 或对象结束符就停
  */
 static int parse_model_config(const char *js, const jsmntok_t *all_tokens,
-                               int obj_start_idx, int ntokens,
+                               int obj_token_idx, int ntokens,
                                model_config_t *mc) {
-  /* 从 obj_start_idx + 1 开始遍历，直到遇到不属于当前 obj 的 token */
-  const jsmntok_t *obj = &all_tokens[obj_start_idx];
-  for (int i = obj_start_idx + 1; i < ntokens; i++) {
-    const jsmntok_t *k = &all_tokens[i];
-    if (k->type != JSMN_STRING) continue;
-    int klen = k->end - k->start;
-    if (klen < 2) continue;
-    i++; if (i >= ntokens) break;
+  memset(mc, 0, sizeof(*mc));
+  /* 从对象 token 的下一个 token 开始遍历 */
+  /* 找到下一个同级的 key token 或路由规则的结束点 */
+  int i = obj_token_idx + 1;
+  while (i < ntokens) {
+    const jsmntok_t *tok = &all_tokens[i];
+    /* 如果遇到另一个 key token（且不是字符串值），说明下一个 rule 开始了 */
+    if (tok->type == JSMN_STRING && tok->start > all_tokens[obj_token_idx].start) {
+      /* 检查这个 key 是不是 routing_rules 的子 key（如 "chat", "code" 等）
+         如果是，说明当前对象结束了 */
+      int klen = tok->end - tok->start - 2;
+      int is_rule_key = 0;
+      for (int t = 0; t < TASK_UNKNOWN; t++) {
+        if ((int)strlen(task_names[t]) == klen &&
+            strncmp(js + tok->start + 1, task_names[t], klen) == 0) {
+          is_rule_key = 1;
+          break;
+        }
+      }
+      if (is_rule_key) break;  /* 下一个 rule 开始了，停止 */
+    }
+    if (tok->type != JSMN_STRING) { i++; continue; }
+    /* 这是一个 key token，取下一个 token 作为 value */
+    i++;
+    if (i >= ntokens) break;
+    const jsmntok_t *k = tok;
     const jsmntok_t *v = &all_tokens[i];
-    if (klen == 10 && strncmp(js + k->start + 1, "provider", 8) == 0)
+    int klen = k->end - k->start - 2;
+    if (klen < 0) continue;
+    if (klen == 8 && strncmp(js + k->start + 1, "provider", 8) == 0)
       json_string_value(js, v, mc->provider, sizeof(mc->provider));
-    else if (klen == 7 && strncmp(js + k->start + 1, "model", 5) == 0)
+    else if (klen == 5 && strncmp(js + k->start + 1, "model", 5) == 0)
       json_string_value(js, v, mc->model, sizeof(mc->model));
-    else if (klen == 10 && strncmp(js + k->start + 1, "base_url", 8) == 0)
+    else if (klen == 8 && strncmp(js + k->start + 1, "base_url", 8) == 0)
       json_string_value(js, v, mc->base_url, sizeof(mc->base_url));
-    else if (klen == 9 && strncmp(js + k->start + 1, "api_key", 7) == 0)
+    else if (klen == 7 && strncmp(js + k->start + 1, "api_key", 7) == 0)
       json_string_value(js, v, mc->api_key, sizeof(mc->api_key));
+    i++;
   }
   return 0;
 }

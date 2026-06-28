@@ -1,0 +1,9 @@
+{"ts":1782583201342,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782586801040,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782604801567,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782648138900,"model":"claude-sonnet-4-5-20250929","provider":"damai","keyword":"<none>","preview":"你好","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782657266326,"model":"agnes-2.0-flash","provider":"agnes","keyword":"函数","preview":"你好，帮我写个Python函数","fallback":0,"has_image":0,"task_type":1}
+{"ts":1782658801491,"model":"agnes-2.0-flash","provider":"agnes","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782659629734,"model":"claude-sonnet-4-5-20250929","provider":"damai","keyword":"<none>","preview":"你好，做个自我介绍，一句话就行","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782659859169,"model":"claude-sonnet-4-5-20250929","provider":"damai","keyword":"<none>","preview":"你好，做个自我介绍，一句话就行","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782659938567,"model":"claude-sonnet-4-5-20250929","provider":"damai","keyword":"python","preview":"帮我写一个Python的冒泡排序","fallback":0,"has_image":0,"task_type":1}

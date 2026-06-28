@@ -1,0 +1,52 @@
+{
+  "router_model":     {
+      "provider": "ollama",
+      "model": "qwen3:8b-chat",
+      "base_url": "http://192.168.100.4:11434/v1",
+      "api_key": "***"
+      },
+  "routing_rules": {
+    "chat":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  },
+    "code":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  },
+    "vision":   {
+    "provider": "ollama",
+    "model": "minicpm-v:8b",
+    "base_url": "http://192.168.100.4:11434/v1",
+    "api_key": "***"
+  },
+    "reasoning":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  },
+    "translation":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  },
+    "audio":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  },
+    "video":   {
+    "provider": "agnes",
+    "model": "agnes-2.0-flash",
+    "base_url": "https://apihub.agnes-ai.com/v1",
+    "api_key": "***"
+  }
+  }
+}

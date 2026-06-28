@@ -1,0 +1,16 @@
+{"ts":1782410404142,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782414001060,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782432002250,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782432002535,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782432002794,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782432003564,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782486001006,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487341981,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487342699,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487342948,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487343204,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487800718,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487801034,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"[cron:42baf87a-11ae-4e14-9a5c-5b7994d3ca16 model-router-daily-analysis] 运行 Model Router 日志分析：执行 /home/lvzheyu/apps/model-router-c/analyze_daily.sh，读取生成的摘要文件，然后检查 logs/ 目录下所有 summary_*.md 文件，�","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487802758,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487803014,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}
+{"ts":1782487803731,"model":"qwen3:8b-chat","provider":"ollama","keyword":"<none>","preview":"","fallback":1,"has_image":0,"task_type":0}

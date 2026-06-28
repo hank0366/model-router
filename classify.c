@@ -123,6 +123,35 @@ task_type_t classify_by_rules(const char *text) {
   return result;
 }
 
+/* 规则匹配入口（带关键词追踪） */
+task_type_t classify_by_rules_with_keyword(const char *text, char *matched_kw, size_t kw_sz) {
+  if (!text || !*text) {
+    if (matched_kw && kw_sz > 0) matched_kw[0] = '\0';
+    return TASK_CHAT;
+  }
+
+  size_t tlen = strlen(text);
+  char *lower = malloc(tlen + 1);
+  if (!lower) { if (matched_kw && kw_sz > 0) matched_kw[0] = '\0'; return TASK_CHAT; }
+  to_lower_copy(text, lower, tlen + 1);
+
+  task_type_t result = TASK_CHAT;
+
+  for (int i = 0; keyword_table[i].keyword; i++) {
+    if (str_contains_lower(lower, keyword_table[i].keyword)) {
+      result = keyword_table[i].type;
+      if (matched_kw && kw_sz > 0) {
+        strncpy(matched_kw, keyword_table[i].keyword, kw_sz - 1);
+        matched_kw[kw_sz - 1] = '\0';
+      }
+      break;
+    }
+  }
+
+  free(lower);
+  return result;
+}
+
 /* 用 LLM 分类 */
 task_type_t classify_with_llm(const char *text, const model_config_t *router) {
   (void)router;

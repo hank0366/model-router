@@ -6,6 +6,9 @@
 /* 配置文件路径 */
 #define CONFIG_FILE "/home/lvzheyu/apps/model-router-c/config.json"
 
+/* 调试日志开关 */
+#define DEBUG_LOG_ENABLED 1
+
 /* 任务类型 */
 typedef enum {
   TASK_CHAT = 0,
@@ -40,6 +43,7 @@ int config_save(const router_config_t *cfg, const char *path);
 
 /* 意图分类 */
 task_type_t classify_by_rules(const char *text);
+task_type_t classify_by_rules_with_keyword(const char *text, char *matched_kw, size_t kw_sz);
 task_type_t classify_with_llm(const char *text, const model_config_t *router);
 
 /* HTTP 请求工具 */
@@ -68,5 +72,15 @@ int route_and_call(const char *request_body, size_t body_len,
 
 /* 内置规则关键词匹配 */
 int keyword_count(void);
+
+/* 调试日志 */
+#if DEBUG_LOG_ENABLED
+#include "debug_log.h"
+#else
+typedef struct { int __dummy; } debug_log_entry_t;
+static inline int debug_log_init(void) { return 0; }
+static inline void debug_log_write(debug_log_entry_t *e) { (void)e; }
+static inline int debug_log_cleanup_days(unsigned int d) { (void)d; return 0; }
+#endif
 
 #endif /* MODEL_ROUTER_H */

@@ -58,9 +58,10 @@ static int extract_user_text(const char *json, size_t len,
  * 构建 LLM 分类 prompt 并获取结果
  * 这里简单实现 — 实际应该 HTTP POST
  */
-static task_type_t classify_text(const char *text, const router_config_t *cfg) {
+static task_type_t classify_text(const char *text, const router_config_t *cfg,
+                                  char *matched_kw, size_t kw_sz) {
   /* 先试规则匹配 */
-  task_type_t t = classify_by_rules(text);
+  task_type_t t = classify_by_rules_with_keyword(text, matched_kw, kw_sz);
   if (t != TASK_CHAT) return t;
 
   /* 检测图片 */
@@ -94,11 +95,13 @@ int route_and_call(const char *request_body, size_t body_len,
 
   /* 2. 意图分类 */
   task_type_t task;
+  char matched_kw[128] = {0};
+  
   if (has_image) {
     task = TASK_VISION;
     fprintf(stderr, "[router] 📷 检测到图片 → vision\n");
   } else {
-    task = classify_text(user_text, cfg);
+    task = classify_text(user_text, cfg, matched_kw, sizeof(matched_kw));
     fprintf(stderr, "[router] 🎯 任务类型: %s\n", task_names[task]);
   }
 
@@ -115,6 +118,27 @@ int route_and_call(const char *request_body, size_t body_len,
   }
 
   fprintf(stderr, "[router] 📡 路由到: %s (%s)\n", backend->model, backend->provider);
+
+  /* ===== 调试日志 ===== */
+  debug_log_entry_t log_entry = {0};
+  log_entry.timestamp = time(NULL);
+  log_entry.task_type = task;
+  log_entry.has_image = has_image;
+  strncpy(log_entry.used_model, backend->model, sizeof(log_entry.used_model) - 1);
+  strncpy(log_entry.used_provider, backend->provider, sizeof(log_entry.used_provider) - 1);
+  strncpy(log_entry.user_text_preview, user_text, sizeof(log_entry.user_text_preview) - 1);
+  if (has_image) {
+    strncpy(log_entry.matched_keyword, "<image>", sizeof(log_entry.matched_keyword) - 1);
+    log_entry.fallback = 0;
+  } else if (matched_kw[0]) {
+    strncpy(log_entry.matched_keyword, matched_kw, sizeof(log_entry.matched_keyword) - 1);
+    log_entry.fallback = 0;
+  } else {
+    strncpy(log_entry.matched_keyword, "<none>", sizeof(log_entry.matched_keyword) - 1);
+    log_entry.fallback = 1;
+  }
+  debug_log_write(&log_entry);
+  /* ===== 调试日志结束 ===== */
 
   /* 4. 构建后端 URL */
   char url[512];

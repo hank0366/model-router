@@ -1,0 +1,52 @@
+{
+  "router_model": {
+    "provider": "ollama",
+    "model": "qwen3:8b-chat",
+    "base_url": "http://192.168.100.4:11434/v1",
+    "api_key": "***"
+  },
+  "routing_rules": {
+    "vision": {
+      "provider": "ollama",
+      "model": "minicpm-v:8b",
+      "base_url": "http://192.168.100.4:11434/v1",
+      "api_key": "***"
+    },
+    "code": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "sk-fd3b5d1f8a504246b521a9cb7cf236aa"
+    },
+    "reasoning": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "sk-fd3b5d1f8a504246b521a9cb7cf236aa"
+    },
+    "translation": {
+      "provider": "ollama",
+      "model": "qwen3:8b-chat",
+      "base_url": "http://192.168.100.4:11434/v1",
+      "api_key": "***"
+    },
+    "chat": {
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "sk-fd3b5d1f8a504246b521a9cb7cf236aa"
+    },
+    "audio": {
+      "provider": "ollama",
+      "model": "qwen3:8b-chat",
+      "base_url": "http://192.168.100.4:11434/v1",
+      "api_key": "***"
+    },
+    "video": {
+      "provider": "ollama",
+      "model": "qwen3:8b-chat",
+      "base_url": "http://192.168.100.4:11434/v1",
+      "api_key": "***"
+    }
+  }
+}

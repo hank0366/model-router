@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c11 -D_GNU_SOURCE -g
 LDFLAGS = -lpthread
 
-SRCS = http_server.c config.c classify.c route.c http_client.c jsmn.c
+SRCS = http_server.c config.c classify.c route.c http_client.c jsmn.c debug_log.c
 OBJS = $(SRCS:.c=.o)
 TARGET = model_router
 
